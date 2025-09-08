@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
-import { PoseCamera } from "./PoseCamera";
+import { PoseCamera } from "../features/camera/PoseCamera";
 import { PullUpTracker } from "./PullUpTracker";
 import type { Results } from '@mediapipe/pose';
-import TurnCamera from "./TurnCamera";
+import TurnCamera from "../features/camera/TurnCamera";
 
 // Добавляем интерфейс для класса PoseCamera
 interface PoseCameraClass {

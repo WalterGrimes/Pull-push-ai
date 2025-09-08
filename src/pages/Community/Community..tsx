@@ -5,9 +5,9 @@ import {
   updateDoc, arrayUnion, arrayRemove 
 } from 'firebase/firestore';
 import { ref, deleteObject } from 'firebase/storage';
-import { db, storage, auth } from '../firebase';
+import { db, storage, auth } from '../../firebase'
 import { useAuthState } from 'react-firebase-hooks/auth';
-import PostForm from '../components/PostForm';
+import PostForm from '../../features/profile/Postform';
 import './Community.css';
 
 interface Post {

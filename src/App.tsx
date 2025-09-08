@@ -1,17 +1,17 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { PoseCamera } from "./components/PoseCamera";
-import PushUpTracker from "./components/PushUpTracker";
-import PullUpTracker from "./components/PullUpTracker";
+import { PoseCamera } from "./features/camera/PoseCamera";
+import PushUpTracker from "./features/workout/PushUpTracker";
+import PullUpTracker from "./features/workout/PullUpTracker";
 import type { Results } from '@mediapipe/pose';
-import TurnCamera from "./components/TurnCamera";
-import { VideoFileProcessor } from "./components/VideoFileProcessor";
+import TurnCamera from "./features/camera/TurnCamera";
+import { VideoFileProcessor } from "./features/video-processing/VideoFileProcessor";
 import { Link, useNavigate, Routes, Route } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, db } from "./firebase";
 import { doc, updateDoc, getDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
-import Community from "./pages/Community.";
-import Leaderboard from "./components/Leaderboard";
-import ProfileEditor from "./components/ProfileEditor";
+import Community from "./pages/Community/Community.";
+import Leaderboard from "./features/leaderboard/Leaderboard";
+import ProfileEditor from "./features/profile/ProfileEditor";
 import "./App.css";
 
 interface User {

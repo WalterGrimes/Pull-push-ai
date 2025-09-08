@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { updateProfile } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { auth, db, storage } from '../firebase';
+import { auth, db, storage } from '../../firebase';
 
 interface Props {
   user: any;

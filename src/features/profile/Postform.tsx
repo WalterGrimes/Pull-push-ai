@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '../firebase';
+import { storage } from '../../firebase';
 
 interface PostFormProps {
   onSubmit: (text: string, imageUrl?: string) => Promise<void>;
