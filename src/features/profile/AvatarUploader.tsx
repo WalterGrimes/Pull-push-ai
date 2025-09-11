@@ -1,7 +1,7 @@
 // src/components/AvatarUploader.tsx
 import React, { useState, useRef } from 'react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '../firebase';
+import { storage } from '../../firebase';
 import './AvatarUploader.css';
 
 interface AvatarUploaderProps {

@@ -1,9 +1,10 @@
-import { useState, FormEvent, useEffect } from "react";
+import { useState, useEffect } from "react";
+import type { FormEvent } from "react";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
-import { auth, db } from "../firebase";
+import { auth, db } from "../../firebase";
 import { useNavigate, Link } from "react-router-dom";
-import AvatarUploader from "../components/AvatarUploader";
+import AvatarUploader from "../profile/AvatarUploader";
 import './Register.css';
 
 const Register = () => {
@@ -31,13 +32,13 @@ const Register = () => {
   const handleRegister = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
-    
+
     // Валидация полей
     if (password !== confirmPassword) {
       setError("Пароли не совпадают");
       return;
     }
-    
+
     if (password.length < 6) {
       setError("Пароль должен содержать минимум 6 символов");
       return;
@@ -49,7 +50,7 @@ const Register = () => {
     }
 
     setLoading(true);
-    
+
     try {
       // 1. Создаем пользователя
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -80,9 +81,9 @@ const Register = () => {
 
     } catch (error: any) {
       console.error("Полная ошибка регистрации:", error);
-      
+
       let errorMessage = "Ошибка регистрации";
-      switch(error.code) {
+      switch (error.code) {
         case "auth/email-already-in-use":
           errorMessage = "Этот email уже зарегистрирован";
           break;
@@ -101,7 +102,7 @@ const Register = () => {
         default:
           errorMessage = `Ошибка: ${error.code || "неизвестная ошибка"}`;
       }
-      
+
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -112,7 +113,7 @@ const Register = () => {
     <div className="auth-container">
       <form onSubmit={handleRegister} className="auth-form">
         <h2>Регистрация</h2>
-        
+
         {success ? (
           <div className="success-message">
             <h3>Регистрация успешно завершена! ✅</h3>
@@ -132,7 +133,7 @@ const Register = () => {
                 disabled={loading}
               />
             </div>
-            
+
             <div className="form-group">
               <label htmlFor="password">Пароль (мин. 6 символов)</label>
               <input
@@ -146,7 +147,7 @@ const Register = () => {
                 disabled={loading}
               />
             </div>
-            
+
             <div className="form-group">
               <label htmlFor="confirmPassword">Подтвердите пароль</label>
               <input
@@ -159,7 +160,7 @@ const Register = () => {
                 disabled={loading}
               />
             </div>
-            
+
             <div className="form-group">
               <label htmlFor="nickname">Никнейм</label>
               <input
@@ -172,15 +173,15 @@ const Register = () => {
                 disabled={loading}
               />
             </div>
-            
+
             <div className="form-group">
               <label>Фото профиля (необязательно)</label>
-              <AvatarUploader 
-                onUpload={setPhotoURL} 
+              <AvatarUploader
+                onUpload={setPhotoURL}
                 disabled={loading}
               />
             </div>
-            
+
             <div className="form-group">
               <label htmlFor="description">О себе (необязательно)</label>
               <textarea
@@ -192,9 +193,9 @@ const Register = () => {
                 disabled={loading}
               />
             </div>
-            
-            <button 
-              type="submit" 
+
+            <button
+              type="submit"
               disabled={loading}
               className={loading ? "loading" : ""}
             >
@@ -207,9 +208,9 @@ const Register = () => {
                 "Зарегистрироваться"
               )}
             </button>
-            
+
             {error && <p className="error-message">{error}</p>}
-            
+
             <div className="auth-links">
               <p>Уже есть аккаунт? <Link to="/login">Войдите</Link></p>
               <p><Link to="/reset-password">Забыли пароль?</Link></p>

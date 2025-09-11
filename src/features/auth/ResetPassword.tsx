@@ -1,8 +1,10 @@
 // src/Form/ResetPassword.tsx
-import { useState, FormEvent } from "react";
+import { useState } from "react";
+import type { FormEvent} from 'react'
 import { sendPasswordResetEmail } from "firebase/auth";
-import { auth } from "../firebase";
+import { auth } from "../../../firebase";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import './Login.css'
 
 const ResetPassword = () => {

@@ -1,9 +1,5 @@
 import React from 'react';
-import { useWorkout } from './hooks/useWorkout';
-import { ExerciseTypeToggle } from './components/ExerciseTypeToggle';
-import { CameraView } from './components/CameraView';
-import { ExerciseTracker } from './components/ExerciseTracker';
-import { WorkoutInstructions } from './components/WorkoutInstructions';
+
 
 export const WorkoutPage = () => {
   const {

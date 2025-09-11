@@ -209,3 +209,278 @@
   text-align: center;
   font-size: 14px;
 }
+
+.video-recorder {
+  margin: 20px 0;
+  text-align: center;
+}
+
+.record-button {
+  padding: 15px 30px;
+  font-size: 1.2rem;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin: 10px;
+}
+
+.record-button.start {
+  background: #4CAF50;
+  color: white;
+}
+
+.record-button.stop {
+  background: #f44336;
+  color: white;
+}
+
+.record-button:hover {
+  transform: scale(1.05);
+}
+
+.recording-indicator {
+  color: #f44336;
+  font-weight: bold;
+  margin: 10px 0;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.recording-result {
+  background: rgba(76, 175, 80, 0.1);
+  padding: 20px;
+  border-radius: 10px;
+  margin: 20px 0;
+  text-align: center;
+}
+
+.recording-section {
+  margin-top: 30px;
+  padding: 20px;
+  border-top: 1px solid #ddd;
+}
+
+/* Стили для уведомлений */
+.success-message {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+  padding: 15px 20px;
+  border-radius: 10px;
+  margin: 20px 0;
+  animation: slideIn 0.3s ease;
+}
+
+.success-content {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.success-icon {
+  font-size: 2rem;
+}
+
+.success-content h3 {
+  margin: 0 0 5px 0;
+  font-size: 1.2rem;
+}
+
+.success-content p {
+  margin: 0;
+  opacity: 0.9;
+}
+
+.success-content a {
+  color: #ffeb3b;
+  text-decoration: underline;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  margin-left: auto;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.close-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Стили для индикатора записи */
+.recording-dot {
+  color: #ff4444;
+  animation: pulse 1s infinite;
+  margin-right: 8px;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.recording-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 68, 68, 0.1);
+  color: #ff4444;
+  padding: 10px 15px;
+  border-radius: 20px;
+  font-weight: bold;
+  margin: 10px 0;
+}
+/* Стили для уведомлений */
+.success-message {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+  padding: 15px 20px;
+  border-radius: 10px;
+  margin: 20px 0;
+  animation: slideIn 0.3s ease;
+}
+
+.success-content {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.success-icon {
+  font-size: 2rem;
+}
+
+.success-content h3 {
+  margin: 0 0 5px 0;
+  font-size: 1.2rem;
+}
+
+.success-content p {
+  margin: 0;
+  opacity: 0.9;
+}
+
+.success-content a {
+  color: #ffeb3b;
+  text-decoration: underline;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  margin-left: auto;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.close-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Стили для индикатора записи */
+.recording-dot {
+  color: #ff4444;
+  animation: pulse 1s infinite;
+  margin-right: 8px;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.recording-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 68, 68, 0.1);
+  color: #ff4444;
+  padding: 10px 15px;
+  border-radius: 20px;
+  font-weight: bold;
+  margin: 10px 0;
+}
+
+/* Стили для кнопок записи */
+.record-button {
+  padding: 15px 30px;
+  font-size: 1.2rem;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin: 10px;
+}
+
+.record-button.start {
+  background: #4CAF50;
+  color: white;
+}
+
+.record-button.stop {
+  background: #f44336;
+  color: white;
+}
+
+.record-button:hover {
+  transform: scale(1.05);
+}
+
+.record-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Загрузка */
+.loading {
+  text-align: center;
+  padding: 40px;
+  font-size: 1.2rem;
+  color: #666;
+}
