@@ -4,14 +4,15 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyCltPuGZ5AnRNxRNcMqMIidLxoLUlgcRe4",
-  authDomain: "pull-push-ai.firebaseapp.com",
-  projectId: "pull-push-ai",
-  storageBucket: "pull-push-ai.firebasestorage.app",
-  messagingSenderId: "160707453652",
-  appId: "1:160707453652:web:1783fe97d151dcc0a25141",
-  measurementId: "G-Z4ZZ1T3MQY"
+  apiKey: import.meta.env.VITE_API_KEY,
+  authDomain: import.meta.env.VITE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_APP_ID,
+  measurementId: import.meta.env.VITE_MEASUREMENT_ID
 };
+
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
