@@ -11,9 +11,9 @@
 }
 
 .filters button {
-  padding: 10px 20px;
+  padding: 10px 15px;
   border: 1px solid #ddd;
-  border-radius: 20px;
+  border-radius: 5px;
   background: white;
   cursor: pointer;
 }
@@ -32,7 +32,7 @@
 
 .recording-card {
   border: 1px solid #ddd;
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
   background: white;
 }
@@ -50,22 +50,32 @@
 .exercise-type {
   font-weight: bold;
   margin-bottom: 10px;
-  font-size: 1.1rem;
 }
 
 .recording-stats {
   display: flex;
   flex-direction: column;
   gap: 5px;
+  margin-bottom: 10px;
 }
 
-.count, .duration, .date {
-  font-size: 0.9rem;
-  color: #666;
+.publish-button {
+  width: 100%;
+  padding: 10px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.publish-button:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
 }
 
 .empty-state {
   text-align: center;
   padding: 40px;
-  color: #666;
+  color: #6c757d;
 }

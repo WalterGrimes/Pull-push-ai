@@ -1,31 +1,40 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage, db } from '../../firebase';
-import { doc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { auth } from '../../firebase';
+// src/features/recording/VideoRecorder.tsx
+
+import React, { useRef, useState, useCallback, useEffect, memo } from 'react';
 
 interface VideoRecorderProps {
   mode: 'pushup' | 'pullup';
-  onRecordingComplete: (count: number, videoUrl: string) => void;
+  currentCount: number;
+  onRecordingComplete(count: number, videoBlob: Blob, duration: number): void;
   onRecordingStatusChange?: (isRecording: boolean) => void;
 }
 
-export const VideoRecorder: React.FC<VideoRecorderProps> = ({
+const VideoRecorderComponent: React.FC<VideoRecorderProps> = ({
   mode,
+  currentCount,
   onRecordingComplete,
   onRecordingStatusChange
 }) => {
   const [isRecording, setIsRecording] = useState(false);
-  const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
-  const [count, setCount] = useState(0);
   const [recordingTime, setRecordingTime] = useState(0);
+  
+  const chunksRef = useRef<Blob[]>([]);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Стабильные ссылки на колбэки
+  const stableOnRecordingComplete = useRef(onRecordingComplete);
+  const stableOnRecordingStatusChange = useRef(onRecordingStatusChange);
 
   useEffect(() => {
-    onRecordingStatusChange?.(isRecording);
-  }, [isRecording, onRecordingStatusChange]);
+    stableOnRecordingComplete.current = onRecordingComplete;
+    stableOnRecordingStatusChange.current = onRecordingStatusChange;
+  });
+
+  useEffect(() => {
+    stableOnRecordingStatusChange.current?.(isRecording);
+  }, [isRecording]);
 
   useEffect(() => {
     if (isRecording) {
@@ -46,98 +55,88 @@ export const VideoRecorder: React.FC<VideoRecorderProps> = ({
     };
   }, [isRecording]);
 
-  const startRecording = async () => {
+  const startRecording = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
+          width: { ideal: 640 },
+          height: { ideal: 480 },
           frameRate: { ideal: 30 }
         },
-        audio: false
+        audio: true
       });
 
       streamRef.current = stream;
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'video/webm; codecs=vp9'
-      });
 
+      const preferredMimeType = 'video/webm; codecs=vp9,opus';
+      let mediaRecorder: MediaRecorder;
+      
+      try {
+        if (MediaRecorder.isTypeSupported(preferredMimeType)) {
+          mediaRecorder = new MediaRecorder(stream, { mimeType: preferredMimeType });
+        } else {
+          mediaRecorder = new MediaRecorder(stream);
+        }
+      } catch (e) {
+        mediaRecorder = new MediaRecorder(stream);
+      }
       mediaRecorderRef.current = mediaRecorder;
-      setRecordedChunks([]);
+
+      chunksRef.current = [];
       setRecordingTime(0);
 
-      mediaRecorder.ondataavailable = (event) => {
+      mediaRecorderRef.current.ondataavailable = (event) => {
         if (event.data.size > 0) {
-          setRecordedChunks(prev => [...prev, event.data]);
+          chunksRef.current.push(event.data);
+          console.log('📹 Chunk added, size:', event.data.size);
         }
       };
 
-      mediaRecorder.start(1000);
+      mediaRecorderRef.current.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+        console.log('📦 Blob created, size:', blob.size, 'bytes');
+        console.log('📊 Total chunks:', chunksRef.current.length);
+
+        if (blob.size > 0) {
+          stableOnRecordingComplete.current(currentCount, blob, recordingTime);
+        } else {
+          console.error('❌ Empty blob created');
+          alert('Ошибка: видео не записалось');
+        }
+        
+        chunksRef.current = [];
+      };
+
+      mediaRecorderRef.current.start(100);
       setIsRecording(true);
+      console.log('✅ Recording started');
 
     } catch (error) {
       console.error('Error starting recording:', error);
       alert('Не удалось начать запись. Проверьте разрешения камеры.');
     }
-  };
+  }, [currentCount, recordingTime]);
 
-  const stopRecording = useCallback(async () => {
+  const stopRecording = useCallback(() => {
     console.log('🛑 Stop recording called');
+
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
-
       if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
-
-      if (recordedChunks.length > 0) {
-        const blob = new Blob(recordedChunks, { type: 'video/webm' });
-        console.log('📦 Blob created, size:', blob.size, 'bytes'); // <-- ДОБАВЬ ЭТУ СТРОЧКУ
-        await saveRecording(blob);
-      } else {
-        console.log('❌ No recorded chunks found'); // <-- И ЭТУ
+        streamRef.current.getTracks().forEach(track => {
+          track.stop();
+        });
+        streamRef.current = null;
       }
     }
-  }, [isRecording, recordedChunks]);
+  }, [isRecording]);
 
-  const saveRecording = async (blob: Blob) => {
-    console.log('💾 Save recording started');
-    try {
-      const user = auth.currentUser;
-      if (!user) {
-        alert('Необходимо войти в аккаунт для сохранения записи');
-        return;
-      }
-
-      const filename = `recordings/${user.uid}/${Date.now()}_${mode}.webm`;
-      const storageRef = ref(storage, filename);
-
-      await uploadBytes(storageRef, blob);
-      const videoUrl = await getDownloadURL(storageRef);
-
-      await addDoc(collection(db, 'users', user.uid, 'recordings'), {
-        exerciseType: mode,
-        count: count,
-        videoUrl: videoUrl,
-        date: serverTimestamp(),
-        duration: recordingTime,
-        filename: filename
-      });
-
-      onRecordingComplete(count, videoUrl);
-
-    } catch (error) {
-      console.error('Error saving recording:', error);
-      alert('❌ Ошибка сохранения записи. Попробуйте ещё раз.');
-    }
-  };
-
-  const formatTime = (seconds: number) => {
+  const formatTime = useCallback((seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+  }, []);
 
   return (
     <div className="video-recorder">
@@ -155,11 +154,10 @@ export const VideoRecorder: React.FC<VideoRecorderProps> = ({
             onClick={stopRecording}
             className="record-button stop"
           >
-            ⏹️ Завершить запись
+            ⏹️ Завершить запись ({formatTime(recordingTime)})
           </button>
         )}
       </div>
-
       {isRecording && (
         <div className="recording-indicator">
           <div className="recording-dot">●</div>
@@ -169,3 +167,5 @@ export const VideoRecorder: React.FC<VideoRecorderProps> = ({
     </div>
   );
 };
+
+export const VideoRecorder = memo(VideoRecorderComponent);

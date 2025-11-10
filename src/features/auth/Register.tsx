@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import type { FormEvent } from "react";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../../firebase";
 import { useNavigate, Link } from "react-router-dom";
-import AvatarUploader from "../profile/AvatarUploader";
+import AvatarSelector from "../profile/AvatarSelector";
 import './Register.css';
 
 const Register = () => {
@@ -19,7 +19,6 @@ const Register = () => {
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
-  // Редирект после успешной регистрации
   useEffect(() => {
     if (success) {
       const timer = setTimeout(() => {
@@ -33,7 +32,6 @@ const Register = () => {
     e.preventDefault();
     setError("");
 
-    // Валидация полей
     if (password !== confirmPassword) {
       setError("Пароли не совпадают");
       return;
@@ -56,31 +54,32 @@ const Register = () => {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // 2. Обновляем профиль
+      // 2. Обновляем профиль в Auth
       await updateProfile(user, {
-        displayName: nickname,
+        displayName: nickname.trim(),
         photoURL: photoURL || null,
       });
 
-      // 3. Сохраняем доп. данные в Firestore
+      // 3. Сохраняем данные в Firestore с серверным временем
       await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
         email: user.email,
+        displayName: nickname.trim(),
         nickname: nickname.trim(),
         photoURL: photoURL || null,
-        description: description.trim(),
+        description: description.trim() || "",
         pushupRecord: 0,
         pullupRecord: 0,
         pushupRecordDate: null,
         pullupRecordDate: null,
-        createdAt: new Date().toISOString(),
-        lastLogin: new Date().toISOString()
+        createdAt: serverTimestamp(), // ✅ Серверное время
+        lastLogin: serverTimestamp()   // ✅ Серверное время
       });
 
-      setSuccess(true); // Устанавливаем флаг успеха
+      setSuccess(true);
 
     } catch (error: any) {
-      console.error("Полная ошибка регистрации:", error);
+      console.error("Ошибка регистрации:", error);
 
       let errorMessage = "Ошибка регистрации";
       switch (error.code) {
@@ -100,7 +99,7 @@ const Register = () => {
           errorMessage = "Слишком много запросов. Попробуйте позже";
           break;
         default:
-          errorMessage = `Ошибка: ${error.code || "неизвестная ошибка"}`;
+          errorMessage = `Ошибка: ${error.message || "неизвестная ошибка"}`;
       }
 
       setError(errorMessage);
@@ -175,9 +174,10 @@ const Register = () => {
             </div>
 
             <div className="form-group">
-              <label>Фото профиля (необязательно)</label>
-              <AvatarUploader
-                onUpload={setPhotoURL}
+              <label>Выберите аватарку</label>
+              <AvatarSelector
+                onSelect={setPhotoURL}
+                currentAvatar={photoURL}
                 disabled={loading}
               />
             </div>
@@ -202,7 +202,7 @@ const Register = () => {
               {loading ? (
                 <>
                   <span className="loading-spinner"></span>
-                  Идет регистрация...(если загрузка идет слишком долго,попробуйте перезагрузить страницу)
+                  Идет регистрация...
                 </>
               ) : (
                 "Зарегистрироваться"

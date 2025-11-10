@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
-import { 
-  collection, query, orderBy, onSnapshot, 
+import {
+  collection, query, orderBy, onSnapshot,
   addDoc, serverTimestamp, doc, deleteDoc,
-  updateDoc, arrayUnion, arrayRemove 
+  updateDoc, arrayUnion, arrayRemove
 } from 'firebase/firestore';
 import { ref, deleteObject } from 'firebase/storage';
-import { db, storage, auth } from '../../firebase'
+import { db, storage, auth } from '../../firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import PostForm from '../../features/profile/Postform';
-import './Community.css';
 
 interface Post {
   id: string;
@@ -38,25 +37,45 @@ const Community = () => {
   }, []);
 
   // Создание поста
+  // Замените функцию handleCreatePost в Community.tsx на эту:
+
   const handleCreatePost = async (text: string, imageUrl?: string) => {
-    if (!user) return;
-    
-    await addDoc(collection(db, 'posts'), {
-      text,
-      imageUrl,
-      authorId: user.uid,
-      authorName: user.displayName || 'Anonymous',
-      authorPhotoURL: user.photoURL || null,
-      createdAt: serverTimestamp(),
-      likes: []
-    });
+    if (!user) {
+      console.error('No user logged in');
+      return;
+    }
+
+    console.log('📝 Creating post...', { text, imageUrl });
+
+    try {
+      const postData = {
+        text,
+        authorId: user.uid,
+        authorName: user.displayName || 'Anonymous',
+        authorPhotoURL: user.photoURL || null,
+        createdAt: serverTimestamp(),
+        likes: [],
+        ...(imageUrl ? { imageUrl } : {})
+      };
+
+      console.log('💾 Saving to Firestore...', postData);
+
+      await addDoc(collection(db, 'posts'), postData);
+
+      console.log('✅ Post created successfully!');
+    } catch (err) {
+      console.error('❌ Error creating post:', err);
+      throw err; // ⚠️ ВАЖНО: пробрасываем ошибку чтобы PostForm узнал о проблеме
+    }
   };
+
+
 
   // Лайк поста
   const handleLike = async (postId: string) => {
     if (!user) return;
     const postRef = doc(db, 'posts', postId);
-    
+
     await updateDoc(postRef, {
       likes: posts.find(p => p.id === postId)?.likes.includes(user.uid)
         ? arrayRemove(user.uid)
@@ -67,7 +86,7 @@ const Community = () => {
   // Удаление поста
   const handleDeletePost = async (postId: string, imageUrl?: string) => {
     if (!user) return;
-    
+
     if (imageUrl) {
       await deleteObject(ref(storage, imageUrl));
     }
@@ -77,24 +96,24 @@ const Community = () => {
   return (
     <div className="community">
       <h1>Community Feed</h1>
-      
+
       {user && <PostForm onSubmit={handleCreatePost} />}
-      
+
       <div className="posts">
         {posts.map(post => (
           <div key={post.id} className="post">
             <div className="post-header">
-              <img 
-                src={post.authorPhotoURL || '/default-avatar.png'} 
+              <img
+                src={post.authorPhotoURL || '/default-avatar.png'}
                 alt={post.authorName}
               />
               <div>
                 <h3>{post.authorName}</h3>
                 <small>{post.createdAt?.toDate().toLocaleString()}</small>
               </div>
-              
+
               {post.authorId === user?.uid && (
-                <button 
+                <button
                   onClick={() => handleDeletePost(post.id, post.imageUrl)}
                   className="delete-btn"
                 >
@@ -102,15 +121,15 @@ const Community = () => {
                 </button>
               )}
             </div>
-            
+
             <p>{post.text}</p>
-            
+
             {post.imageUrl && (
               <img src={post.imageUrl} alt="Post content" className="post-image" />
             )}
-            
+
             <div className="post-actions">
-              <button 
+              <button
                 onClick={() => handleLike(post.id)}
                 className={post.likes.includes(user?.uid || '') ? 'liked' : ''}
               >

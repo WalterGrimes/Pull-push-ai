@@ -1,3 +1,9 @@
+import React, {useState} from "react";
+import { uploadBytes } from "@firebase/storage";
+import { ref } from "@firebase/storage";
+import { storage } from "../../firebase";
+import {auth} from "../../firebase"
+
 const VideoUploadModal = ({ onClose }: { onClose: () => void }) => {
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [exerciseType, setExerciseType] = useState<'pushup' | 'pullup'>('pushup');

@@ -1,50 +1,110 @@
-/* src/pages/Leaderboard.css */
-.leaderboard-container {
-  padding: 2rem;
-  color: #333;
+.leaderboard {
+  padding: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
 }
-.leaderboards {
+
+.tabs {
   display: flex;
-  gap: 2rem;
-  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
 }
-.leaderboard-section {
-  width: 45%;
+
+.tabs button {
+  padding: 10px 20px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background: white;
+  cursor: pointer;
 }
-table {
-  width: 100%;
-  border-collapse: collapse;
+
+.tabs button.active {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
 }
-th, td {
-  padding: 12px;
+
+.leaderboard-table {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table-header {
+  display: grid;
+  grid-template-columns: 80px 1fr 100px 100px;
+  padding: 15px;
+  background: #f8f9fa;
+  font-weight: bold;
   border-bottom: 1px solid #ddd;
-  text-align: left;
 }
-th {
-  background-color: #f2f2f2;
-}
-.user-cell {
-  display: flex;
+
+.table-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 100px 100px;
+  padding: 15px;
+  border-bottom: 1px solid #ddd;
   align-items: center;
 }
-.user-cell img {
+
+.table-row:last-child {
+  border-bottom: none;
+}
+
+.table-row.top-1 {
+  background: #fff9c4;
+}
+
+.table-row.top-2 {
+  background: #f5f5f5;
+}
+
+.table-row.top-3 {
+  background: #ffe0b2;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  margin-right: 10px;
   object-fit: cover;
 }
-.dev-banner {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: #fffae6;
-  border: 1px solid #f1c40f;
-  color: #7d6608;
-  padding: 12px 16px;
+
+.rank {
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
+.video-link a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.video-link a:hover {
+  text-decoration: underline;
+}
+
+.leaderboard-info {
+  margin-top: 30px;
+  padding: 20px;
+  background: #f8f9fa;
   border-radius: 8px;
-  font-size: 14px;
-  max-width: 300px;
-  z-index: 10;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.leaderboard-info h3 {
+  margin-bottom: 15px;
+}
+
+.leaderboard-info ol {
+  padding-left: 20px;
+}
+
+.leaderboard-info li {
+  margin-bottom: 8px;
 }

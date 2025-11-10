@@ -1,6 +1,7 @@
 // shared/ui/cards/ExerciseCard.tsx
 import React from "react";
-import { ExerciseType } from "@/entities/exercise";
+import { ExerciseType } from "@/entities/exercise/type";
+import { ExerciseType } from "@/entities/exercise/types";
 
 interface ExerciseCardProps {
   type: ExerciseType;

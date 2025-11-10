@@ -1,112 +1,130 @@
+// features/leaderboard/Leaderboard.tsx
 import { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, where } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import './Leaderboard.css';
 
-interface User {
+interface LeaderboardEntry {
   id: string;
-  nickname: string;
-  photoURL?: string;
-  pushupRecord: number;
-  pullupRecord: number;
+  userId: string;
+  userName: string;
+  userPhoto?: string;
+  exerciseType: 'pushup' | 'pullup';
+  count: number;
+  videoUrl: string;
+  date: Date;
+  verified: boolean;
 }
 
 const Leaderboard = () => {
-  const [users, setUsers] = useState<User[]>([]);
+  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [activeTab, setActiveTab] = useState<'pushup' | 'pullup'>('pushup');
   const [user] = useAuthState(auth);
-  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const q = query(
-      collection(db, 'users'),
-      orderBy(activeTab + 'Record', 'desc')
+      collection(db, 'leaderboard'),
+      where('exerciseType', '==', activeTab),
+      where('verified', '==', true),
+      orderBy('count', 'desc'),
+      orderBy('date', 'asc') // или 'desc' в зависимости от ваших потребностей
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      setUsers(snapshot.docs.map(doc => ({
+      const leaderboardData = snapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data()
-      }) as User));
+        ...doc.data(),
+        date: doc.data().date?.toDate()
+      })) as LeaderboardEntry[];
+
+      setEntries(leaderboardData.slice(0, 20));
+      setLoading(false);
+    }, (error) => {
+      console.error('Error loading leaderboard:', error);
+      setLoading(false);
     });
 
     return () => unsubscribe();
   }, [activeTab]);
+  if (loading) {
+    return (
+      <div className="leaderboard">
+        <div className="loading">Загрузка таблицы лидеров...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="leaderboard">
-      {/* ⚠️ БАННЕР В РАЗРАБОТКЕ */}
-      <div className="dev-banner">
-        🚧 Раздел в разработке. Скоро вы сможете выкладывать свои рекорды по отжиманиям и подтягиваниям, подтверждая их видео, и попадать в таблицу лидеров.
-      </div>
-
-      <h1>Leaderboard</h1>
+      <h1>Таблица лидеров</h1>
 
       <div className="tabs">
         <button
           className={activeTab === 'pushup' ? 'active' : ''}
           onClick={() => setActiveTab('pushup')}
         >
-          Push-Ups
+          💪 Отжимания
         </button>
         <button
           className={activeTab === 'pullup' ? 'active' : ''}
           onClick={() => setActiveTab('pullup')}
         >
-          Pull-Ups
+          👆 Подтягивания
         </button>
       </div>
 
-      {user ? (
-        <button
-          onClick={() => setShowUploadModal(true)}
-          className="add-result-btn"
-        >
-          + Add Your Result
-        </button>
-      ) : (
-        <p className="auth-notice">
-          <a href="/login">Sign in</a> to submit your results
-        </p>
-      )}
-
-      <table>
-        <thead>
-          <tr>
-            <th>Rank</th>
-            <th>User</th>
-            <th>Record</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user, index) => (
-            <tr key={user.id}>
-              <td>{index + 1}</td>
-              <td className="user-cell">
-                <img
-                  src={user.photoURL || '/default-avatar.png'}
-                  alt={user.nickname}
-                />
-                <span>{user.nickname}</span>
-              </td>
-              <td>{user[activeTab + 'Record']}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {showUploadModal && (
-        <div className="modal">
-          <h3>Submit Your {activeTab === 'pushup' ? 'Push-Up' : 'Pull-Up'} Result</h3>
-          <p>Record a video of your workout for verification</p>
-          <input type="file" accept="video/*" />
-          <div className="modal-actions">
-            <button onClick={() => setShowUploadModal(false)}>Cancel</button>
-            <button>Submit</button>
-          </div>
+      <div className="leaderboard-table">
+        <div className="table-header">
+          <span>Место</span>
+          <span>Участник</span>
+          <span>Результат</span>
+          <span>Видео</span>
         </div>
-      )}
+
+        {entries.map((entry, index) => (
+          <div key={entry.id} className={`table-row ${index < 3 ? `top-${index + 1}` : ''}`}>
+            <span className="rank">
+              {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+            </span>
+
+            <span className="user-info">
+              <img
+                src={entry.userPhoto || '/default-avatar.png'}
+                alt={entry.userName}
+                className="user-avatar"
+              />
+              <span className="user-name">{entry.userName}</span>
+            </span>
+
+            <span className="count">{entry.count} повтор.</span>
+
+            <span className="video-link">
+              <a href={entry.videoUrl} target="_blank" rel="noopener noreferrer">
+                📹 Смотреть
+              </a>
+            </span>
+          </div>
+        ))}
+
+        {entries.length === 0 && (
+          <div className="empty-state">
+            <p>Пока нет записей в лидерборде</p>
+            <p>Будьте первым!</p>
+          </div>
+        )}
+      </div>
+
+      <div className="leaderboard-info">
+        <h3>Как попасть в таблицу лидеров?</h3>
+        <ol>
+          <li>Запишите видео выполнения упражнения</li>
+          <li>Сохраните запись в разделе "Мои записи"</li>
+          <li>Нажмите "Опубликовать в лидерборд"</li>
+          <li>Дождитесь проверки модератором</li>
+        </ol>
+      </div>
     </div>
   );
 };

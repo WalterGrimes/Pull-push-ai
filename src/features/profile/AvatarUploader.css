@@ -32,3 +32,18 @@
   font-size: 40px;
   font-weight: bold;
 }
+
+/* src/components/AvatarUploader.css */
+
+.avatar-preview {
+    /* ... остальные стили ... */
+    cursor: pointer; /* Обычный курсор для клика */
+    transition: opacity 0.2s;
+}
+
+.avatar-preview.disabled {
+    /* Визуальный эффект для отключения */
+    opacity: 0.6; /* Делаем полупрозрачным */
+    pointer-events: none; /* Запрещаем все события мыши на элементе */
+    cursor: not-allowed; /* Курсор "не разрешено" */
+}
