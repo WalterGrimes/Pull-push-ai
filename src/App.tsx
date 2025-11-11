@@ -15,10 +15,11 @@ import { VideoRecorder } from './features/recording/VideoRecorder';
 import Recordings from "./pages/Recordings/Recording";
 import Login from "./features/auth/Login";
 import Register from "./features/auth/Register";
-import { auth, db, storage } from "./firebase"; 
+import { auth, db, storage } from "./firebase";
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import "./App.css";
 import type { User as FirebaseUser } from "firebase/auth";
+import { AVATARS } from "./entities/user/user.types";
 
 interface UserData {
     photoURL?: string;
@@ -32,6 +33,7 @@ interface UserData {
 }
 
 function App() {
+    // ✅ 1. ВСЕ useState (13 штук)
     const [isRecording, setIsRecording] = useState(false);
     const [showSuccessMessage, setShowSuccessMessage] = useState(false);
     const [currentRecording, setCurrentRecording] = useState<{
@@ -48,22 +50,41 @@ function App() {
     const [exerciseCount, setExerciseCount] = useState(0);
     const [showProfileEditor, setShowProfileEditor] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+
+    // ✅ 2. useRef (3 штуки)
+    const userDataCache = useRef<Map<string, UserData>>(new Map());
+    const exerciseCountRef = useRef(exerciseCount);
+    const lastProcessed = useRef(0);
+
+    // ✅ 3. useNavigate (это хук из react-router)
     const navigate = useNavigate();
 
-    // ✅ Кеш для userData - избегаем повторных запросов
-    const userDataCache = useRef<Map<string, UserData>>(new Map());
-    
-    // ✅ Стабильная ссылка на exerciseCount для VideoRecorder
-    const exerciseCountRef = useRef(exerciseCount);
+    // ✅ 4. useMemo - ДОБАВЛЯЕМ СЮДА (сразу после useRef, ДО useEffect)
+    const currentAvatarData = useMemo(() => {
+        const avatarId = userData?.photoURL || user?.photoURL || 'avatar1';
+        return AVATARS.find(a => a.id === avatarId) || AVATARS[0];
+    }, [userData?.photoURL, user?.photoURL]);
+
+    const userName = useMemo(() => {
+        if (userData?.displayName) return userData.displayName;
+        if (user?.displayName) return user.displayName;
+        if (user?.email) return user.email;
+        return "Пользователь";
+    }, [userData?.displayName, user?.displayName, user?.email]);
+
+    const avatarUrl = useMemo(() => {
+        return userData?.photoURL || user?.photoURL || undefined;
+    }, [userData?.photoURL, user?.photoURL]);
+
+    // ✅ 5. useEffect (2 штуки)
     useEffect(() => {
         exerciseCountRef.current = exerciseCount;
     }, [exerciseCount]);
 
-    // ✅ Оптимизированная загрузка пользователя с кешированием
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             setIsLoading(true);
-            
+
             try {
                 if (currentUser) {
                     setUser(currentUser);
@@ -80,7 +101,7 @@ function App() {
                     // Если кеша нет - загружаем из Firestore
                     console.log('📥 Loading userData from Firestore');
                     const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-                    
+
                     if (userDoc.exists()) {
                         const data = userDoc.data() as UserData;
                         // Сохраняем в кеш
@@ -106,18 +127,7 @@ function App() {
         return () => unsubscribe();
     }, []);
 
-    // ✅ Мемоизированные вычисления - избегаем ре-рендеров
-    const avatarUrl = useMemo(() => {
-        return userData?.photoURL || user?.photoURL || undefined;
-    }, [userData?.photoURL, user?.photoURL]);
-
-    const userName = useMemo(() => {
-        if (userData?.displayName) return userData.displayName;
-        if (user?.displayName) return user.displayName;
-        if (user?.email) return user.email;
-        return "Пользователь";
-    }, [userData?.displayName, user?.displayName, user?.email]);
-
+    // ✅ 6. useCallback (9 штук)
     const toggleIsCamera = useCallback(() => {
         setIsCameraOn(prev => !prev);
         setVideoFile(null);
@@ -219,8 +229,6 @@ function App() {
         setExerciseCount(0);
     }, []);
 
-    // ✅ Троттлинг для handleResults - снижаем частоту обновлений
-    const lastProcessed = useRef(0);
     const handleResults = useCallback((results: Results) => {
         const now = Date.now();
         // Обновляем максимум раз в 200мс
@@ -264,7 +272,7 @@ function App() {
                             [recordField]: count,
                             [`${mode}RecordDate`]: new Date()
                         } as UserData;
-                        
+
                         // Обновляем кеш
                         userDataCache.current.set(user.uid, updatedData);
                         setUserData(updatedData);
@@ -298,6 +306,7 @@ function App() {
         setUserData(updatedData);
     }, [user]);
 
+    // ✅ 7. Логика загрузки
     if (isLoading) {
         return (
             <div className="app-container">
@@ -306,6 +315,7 @@ function App() {
         );
     }
 
+    // ✅ 8. Рендер JSX
     return (
         <div className="app-container">
             <header className="app-header">
@@ -319,30 +329,33 @@ function App() {
 
                 <div className="user-section">
                     {user ? (
-                        <div className="user-profile" onClick={() => setShowProfileEditor(true)}>
-                            {avatarUrl ? (
-                                <img
-                                    src={avatarUrl}
-                                    alt="Аватар"
-                                    className="user-avatar"
-                                    onError={(e) => {
-                                        const target = e.target as HTMLImageElement;
-                                        // Предотвращаем бесконечный цикл
-                                        if (!target.dataset.errorHandled) {
-                                            target.dataset.errorHandled = 'true';
-                                            target.src = '/default-avatar.png';
-                                        }
-                                    }}
-                                />
-                            ) : (
-                                <div className="avatar-placeholder">
-                                    {userName.charAt(0).toUpperCase()}
-                                </div>
-                            )}
-                            <div className="user-info">
+                        <div className="user-profile">
+                            {/* ✅ ИСПРАВЛЕННОЕ отображение аватарки */}
+                            <div
+                                className="user-avatar"
+                                style={{ background: currentAvatarData.gradient }}
+                                onClick={() => setShowProfileEditor(true)}
+                            >
+                                {currentAvatarData.imageUrl ? (
+                                    <img
+                                        src={currentAvatarData.imageUrl}
+                                        alt={currentAvatarData.name}
+                                        className="avatar-image"
+                                    />
+                                ) : currentAvatarData.emoji ? (
+                                    <span className="avatar-emoji">{currentAvatarData.emoji}</span>
+                                ) : (
+                                    <span className="avatar-fallback">
+                                        {userName.charAt(0).toUpperCase()}
+                                    </span>
+                                )}
+                            </div>
+
+                            <div className="user-info" onClick={() => setShowProfileEditor(true)}>
                                 <span className="user-name">{userName}</span>
                                 <span className="edit-profile-link">Редактировать профиль</span>
                             </div>
+
                             <button onClick={handleLogout} className="auth-button logout-button">
                                 Выйти
                             </button>
