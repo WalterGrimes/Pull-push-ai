@@ -330,32 +330,37 @@ function App() {
                 <div className="user-section">
                     {user ? (
                         <div className="user-profile">
-                            {/* ✅ ИСПРАВЛЕННОЕ отображение аватарки */}
+                            {/* ✅ Контейнер с аватаркой и инфо */}
                             <div
-                                className="user-avatar"
-                                style={{ background: currentAvatarData.gradient }}
+                                className="user-avatar-section"
                                 onClick={() => setShowProfileEditor(true)}
                             >
-                                {currentAvatarData.imageUrl ? (
-                                    <img
-                                        src={currentAvatarData.imageUrl}
-                                        alt={currentAvatarData.name}
-                                        className="avatar-image"
-                                    />
-                                ) : currentAvatarData.emoji ? (
-                                    <span className="avatar-emoji">{currentAvatarData.emoji}</span>
-                                ) : (
-                                    <span className="avatar-fallback">
-                                        {userName.charAt(0).toUpperCase()}
-                                    </span>
-                                )}
+                                <div
+                                    className="user-avatar"
+                                    style={{ background: currentAvatarData.gradient }}
+                                >
+                                    {currentAvatarData.imageUrl ? (
+                                        <img
+                                            src={currentAvatarData.imageUrl}
+                                            alt={currentAvatarData.name}
+                                            className="avatar-image"
+                                        />
+                                    ) : currentAvatarData.emoji ? (
+                                        <span className="avatar-emoji">{currentAvatarData.emoji}</span>
+                                    ) : (
+                                        <span className="avatar-fallback">
+                                            {userName.charAt(0).toUpperCase()}
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className="user-info">
+                                    <span className="user-name">{userName}</span>
+                                    <span className="edit-profile-link">Редактировать профиль</span>
+                                </div>
                             </div>
 
-                            <div className="user-info" onClick={() => setShowProfileEditor(true)}>
-                                <span className="user-name">{userName}</span>
-                                <span className="edit-profile-link">Редактировать профиль</span>
-                            </div>
-
+                            {/* ✅ Кнопка выхода под аватаркой */}
                             <button onClick={handleLogout} className="auth-button logout-button">
                                 Выйти
                             </button>

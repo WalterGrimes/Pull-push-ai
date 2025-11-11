@@ -58,8 +58,8 @@ export const AVATARS: Avatar[] = [
   },
   {
     id: 'avatar6',
-    imageUrl: 'https://api.iconify.design/game-icons/gym.svg?color=%23ffffff&width=60',
-    gradient: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
+    imageUrl: 'https://api.iconify.design/game-icons/weight.svg?color=%23ffffff&width=60',
+    gradient: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
     name: 'Зал'
   },
   {
