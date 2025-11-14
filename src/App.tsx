@@ -20,6 +20,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import "./App.css";
 import type { User as FirebaseUser } from "firebase/auth";
 import { AVATARS } from "./entities/user/user.types";
+import { useAvatarData } from "./hooks/useAvatarData";
 
 interface UserData {
     photoURL?: string;
@@ -59,11 +60,8 @@ function App() {
     // ✅ 3. useNavigate (это хук из react-router)
     const navigate = useNavigate();
 
-    // ✅ 4. useMemo - ДОБАВЛЯЕМ СЮДА (сразу после useRef, ДО useEffect)
-    const currentAvatarData = useMemo(() => {
-        const avatarId = userData?.photoURL || user?.photoURL || 'avatar1';
-        return AVATARS.find(a => a.id === avatarId) || AVATARS[0];
-    }, [userData?.photoURL, user?.photoURL]);
+   
+    const currentAvatarData = useAvatarData(userData,user)
 
     const userName = useMemo(() => {
         if (userData?.displayName) return userData.displayName;
@@ -497,7 +495,7 @@ function App() {
                         </div>
                     } />
 
-                    <Route path="/community" element={<Community />} />
+                    <Route path="/community" element={<Community userData={userData} user={user}/>} />
                     <Route path="/leaderboard" element={<Leaderboard />} />
                     <Route path="/recordings" element={<Recordings user={user} />} />
                     <Route path="/login" element={<Login />} />

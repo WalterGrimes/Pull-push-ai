@@ -8,23 +8,32 @@ import { ref, deleteObject } from 'firebase/storage';
 import { db, storage, auth } from '../../firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import PostForm from '../../features/profile/Postform';
+import { useAvatarData } from '../../hooks/useAvatarData';
+import { AVATARS } from '../../entities/user/user.types';
+import type { UserData } from '../../features/profile/ProfileEditor'
+import type { User as FirebaseUser } from "firebase/auth";
 
-interface Post {
+interface  Post {
   id: string;
   authorId: string;
   authorName: string;
-  authorPhotoURL?: string;
+  authorPhotoURL?: string; // ID аватарки (например, "avatar1")
   text: string;
   imageUrl?: string;
   createdAt: any;
   likes: string[];
 }
 
-const Community = () => {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [user] = useAuthState(auth);
+type CommunityProps = {
+  userData: UserData | null;
+  user: FirebaseUser | null;
+}
 
-  // Загрузка постов
+const Community = ({userData, user}: CommunityProps) => {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [authUser] = useAuthState(auth);
+  const currentAvatarData = useAvatarData(userData, user);
+
   useEffect(() => {
     const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -36,56 +45,45 @@ const Community = () => {
     return () => unsubscribe();
   }, []);
 
-  // Создание поста
-  // Замените функцию handleCreatePost в Community.tsx на эту:
-
   const handleCreatePost = async (text: string, imageUrl?: string) => {
-    if (!user) {
-      console.error('No user logged in');
+    if (!authUser) {
+      console.error('No authUser logged in');
       return;
     }
-
-    console.log('📝 Creating post...', { text, imageUrl });
 
     try {
       const postData = {
         text,
-        authorId: user.uid,
-        authorName: user.displayName || 'Anonymous',
-        authorPhotoURL: user.photoURL || null,
+        authorId: authUser.uid,
+        authorName: authUser.displayName || 'Anonymous',
+        // ✅ Сохраняем ID аватарки (например, "avatar2")
+        authorPhotoURL: currentAvatarData.id,
         createdAt: serverTimestamp(),
         likes: [],
         ...(imageUrl ? { imageUrl } : {})
       };
 
-      console.log('💾 Saving to Firestore...', postData);
-
       await addDoc(collection(db, 'posts'), postData);
-
       console.log('✅ Post created successfully!');
     } catch (err) {
       console.error('❌ Error creating post:', err);
-      throw err; // ⚠️ ВАЖНО: пробрасываем ошибку чтобы PostForm узнал о проблеме
+      throw err;
     }
   };
 
-
-
-  // Лайк поста
   const handleLike = async (postId: string) => {
-    if (!user) return;
+    if (!authUser) return;
     const postRef = doc(db, 'posts', postId);
 
     await updateDoc(postRef, {
-      likes: posts.find(p => p.id === postId)?.likes.includes(user.uid)
-        ? arrayRemove(user.uid)
-        : arrayUnion(user.uid)
+      likes: posts.find(p => p.id === postId)?.likes.includes(authUser.uid)
+        ? arrayRemove(authUser.uid)
+        : arrayUnion(authUser.uid)
     });
   };
 
-  // Удаление поста
   const handleDeletePost = async (postId: string, imageUrl?: string) => {
-    if (!user) return;
+    if (!authUser) return;
 
     if (imageUrl) {
       await deleteObject(ref(storage, imageUrl));
@@ -93,52 +91,115 @@ const Community = () => {
     await deleteDoc(doc(db, 'posts', postId));
   };
 
+  // ✅ Функция для получения данных аватарки по ID
+  const getAvatarData = (avatarId?: string) => {
+    return AVATARS.find(a => a.id === avatarId) || AVATARS[0];
+  };
+
   return (
     <div className="community">
       <h1>Community Feed</h1>
 
-      {user && <PostForm onSubmit={handleCreatePost} />}
+      {authUser && <PostForm onSubmit={handleCreatePost} />}
 
       <div className="posts">
-        {posts.map(post => (
-          <div key={post.id} className="post">
-            <div className="post-header">
-              <img
-                src={post.authorPhotoURL || '/default-avatar.png'}
-                alt={post.authorName}
-              />
-              <div>
-                <h3>{post.authorName}</h3>
-                <small>{post.createdAt?.toDate().toLocaleString()}</small>
+        {posts.map(post => {
+          // ✅ Получаем данные аватарки для каждого поста
+          const postAvatarData = getAvatarData(post.authorPhotoURL);
+
+          return (
+            <div key={post.id} className="post">
+              <div className="post-header">
+                {/* ✅ Рендерим аватарку с emoji/градиентом */}
+                <div 
+                  className="post-avatar"
+                  style={{ background: postAvatarData.gradient }}
+                >
+                  {postAvatarData.imageUrl ? (
+                    <img
+                      src={postAvatarData.imageUrl}
+                      alt={post.authorName}
+                      className="avatar-image"
+                    />
+                  ) : postAvatarData.emoji ? (
+                    <span className="avatar-emoji">{postAvatarData.emoji}</span>
+                  ) : (
+                    <span className="avatar-fallback">
+                      {post.authorName.charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+
+                <div>
+                  <h3>{post.authorName}</h3>
+                  <small>{post.createdAt?.toDate().toLocaleString()}</small>
+                </div>
+
+                {post.authorId === authUser?.uid && (
+                  <button
+                    onClick={() => handleDeletePost(post.id, post.imageUrl)}
+                    className="delete-btn"
+                  >
+                    Delete
+                  </button>
+                )}
               </div>
 
-              {post.authorId === user?.uid && (
-                <button
-                  onClick={() => handleDeletePost(post.id, post.imageUrl)}
-                  className="delete-btn"
-                >
-                  Delete
-                </button>
+              <p>{post.text}</p>
+
+              {post.imageUrl && (
+                <img src={post.imageUrl} alt="Post content" className="post-image" />
               )}
+
+              <div className="post-actions">
+                <button
+                  onClick={() => handleLike(post.id)}
+                  className={post.likes.includes(authUser?.uid || '') ? 'liked' : ''}
+                >
+                  ❤️ {post.likes.length}
+                </button>
+              </div>
             </div>
-
-            <p>{post.text}</p>
-
-            {post.imageUrl && (
-              <img src={post.imageUrl} alt="Post content" className="post-image" />
-            )}
-
-            <div className="post-actions">
-              <button
-                onClick={() => handleLike(post.id)}
-                className={post.likes.includes(user?.uid || '') ? 'liked' : ''}
-              >
-                ❤️ {post.likes.length}
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
+
+      {/* ✅ Добавляем стили для аватарок в постах */}
+      <style>{`
+        .post-avatar {
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-right: 12px;
+          overflow: hidden;
+          flex-shrink: 0;
+        }
+
+        .post-avatar .avatar-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .post-avatar .avatar-emoji {
+          font-size: 24px;
+        }
+
+        .post-avatar .avatar-fallback {
+          color: white;
+          font-size: 20px;
+          font-weight: 600;
+        }
+
+        .post-header {
+          display: flex;
+          align-items: center;
+          margin-bottom: 12px;
+        }
+      `}</style>
     </div>
   );
 };

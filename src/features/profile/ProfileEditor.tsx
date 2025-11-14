@@ -15,6 +15,7 @@ export interface UserData {
   pullupRecordDate?: Date;
   nickname?: string;
   description?: string;
+  avatarid?: string | number;
 }
 
 interface Props {
@@ -270,5 +271,6 @@ const ProfileEditor: React.FC<Props> = ({ user, userData, onClose, onUpdate }) =
     </div>
   );
 };
+
 
 export default ProfileEditor;
