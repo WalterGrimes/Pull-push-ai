@@ -1,3 +1,4 @@
+import type { Timestamp } from '@firebase/firestore';
 import type { User } from 'firebase/auth';
 
 // Профиль пользователя для Firestore
@@ -92,3 +93,27 @@ export const AVATARS: Avatar[] = [
 export const getAvatarById = (avatarId?: string): Avatar => {
   return AVATARS.find(a => a.id === avatarId) || AVATARS[0];
 };
+
+
+export interface Post {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorPhotoURL?: string;
+  text: string;
+  imageUrl?: string;
+  likes: string[];
+  comments?: Comment[];  
+  createdAt: Timestamp;
+}
+
+export interface Comment {
+  id: string;
+  text: string;
+  postId: string;
+  authorId?: string;      
+  authorName?: string;    
+  authorAvatarId?: string; 
+  authorPhotoURL?: string;
+  createdAt: Timestamp | number;
+}

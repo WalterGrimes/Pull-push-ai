@@ -8,7 +8,7 @@ import { VideoFileProcessor } from "./features/video-processing/VideoFileProcess
 import { Link, useNavigate, Routes, Route } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, updateDoc, getDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
-import Community from "./pages/Community/Community.";
+import Community from "./features/community/Community.";
 import Leaderboard from "./features/leaderboard/Leaderboard";
 import ProfileEditor from "./features/profile/ProfileEditor";
 import { VideoRecorder } from './features/recording/VideoRecorder';

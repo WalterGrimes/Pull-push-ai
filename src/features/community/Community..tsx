@@ -7,32 +7,29 @@ import {
 import { ref, deleteObject } from 'firebase/storage';
 import { db, storage, auth } from '../../firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import PostForm from '../../features/profile/Postform';
+import PostForm from '../profile/Postform';
 import { useAvatarData } from '../../hooks/useAvatarData';
 import { AVATARS } from '../../entities/user/user.types';
-import type { UserData } from '../../features/profile/ProfileEditor'
+import type { UserData } from '../profile/ProfileEditor'
 import type { User as FirebaseUser } from "firebase/auth";
-
-interface  Post {
-  id: string;
-  authorId: string;
-  authorName: string;
-  authorPhotoURL?: string; // ID аватарки (например, "avatar1")
-  text: string;
-  imageUrl?: string;
-  createdAt: any;
-  likes: string[];
-}
+import Comments from '../community/Comments/Comments';
+import type { Post } from '../../entities/user/user.types';
 
 type CommunityProps = {
   userData: UserData | null;
   user: FirebaseUser | null;
 }
 
-const Community = ({userData, user}: CommunityProps) => {
+const Community = ({ userData, user }: CommunityProps) => {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [isOpen, isCLose] = useState(false)
   const [authUser] = useAuthState(auth);
-  const currentAvatarData = useAvatarData(userData, user);
+  const currentAvatarData = useAvatarData(
+    userData
+      ? { ...userData, avatarid: userData.avatarid ?? 'avatar1' }
+      : { avatarid: 'avatar1' }
+    , user
+  );
 
   useEffect(() => {
     const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
@@ -80,7 +77,7 @@ const Community = ({userData, user}: CommunityProps) => {
         ? arrayRemove(authUser.uid)
         : arrayUnion(authUser.uid)
     });
-  };
+  }; 
 
   const handleDeletePost = async (postId: string, imageUrl?: string) => {
     if (!authUser) return;
@@ -95,6 +92,7 @@ const Community = ({userData, user}: CommunityProps) => {
   const getAvatarData = (avatarId?: string) => {
     return AVATARS.find(a => a.id === avatarId) || AVATARS[0];
   };
+
 
   return (
     <div className="community">
@@ -111,7 +109,7 @@ const Community = ({userData, user}: CommunityProps) => {
             <div key={post.id} className="post">
               <div className="post-header">
                 {/* ✅ Рендерим аватарку с emoji/градиентом */}
-                <div 
+                <div
                   className="post-avatar"
                   style={{ background: postAvatarData.gradient }}
                 >
@@ -159,6 +157,15 @@ const Community = ({userData, user}: CommunityProps) => {
                   ❤️ {post.likes.length}
                 </button>
               </div>
+
+              <Comments
+                authorName={post.authorName}
+                authorAvatarId={post.authorPhotoURL}
+                post={post}
+                postId={post.id}
+              />
+
+
             </div>
           );
         })}
