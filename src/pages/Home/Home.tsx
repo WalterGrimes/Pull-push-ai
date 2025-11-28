@@ -1,1 +1,0 @@
-export const HomePage = () => <h1>Welcome to Pull-Push App</h1>

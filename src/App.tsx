@@ -19,7 +19,6 @@ import { auth, db, storage } from "./firebase";
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import "./App.css";
 import type { User as FirebaseUser } from "firebase/auth";
-import { AVATARS } from "./entities/user/user.types";
 import { useAvatarData } from "./hooks/useAvatarData";
 
 interface UserData {
@@ -60,8 +59,8 @@ function App() {
     // ✅ 3. useNavigate (это хук из react-router)
     const navigate = useNavigate();
 
-   
-    const currentAvatarData = useAvatarData(userData,user)
+
+    const currentAvatarData = useAvatarData(userData, user)
 
     const userName = useMemo(() => {
         if (userData?.displayName) return userData.displayName;
@@ -212,20 +211,29 @@ function App() {
         }
     }, [mode]);
 
-    const handleVideoUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+   const handleVideoUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
 
-        if (!file.type.startsWith('video/')) {
-            alert('Пожалуйста, выберите видео файл');
-            return;
-        }
+  if (!file.type.startsWith('video/')) {
+    alert('❌ Пожалуйста, выберите видео файл');
+    e.target.value = ''; // Сбрасываем input
+    return;
+  }
 
-        setVideoFile(file);
-        setIsCameraOn(true);
-        setProcessingMode("upload");
-        setExerciseCount(0);
-    }, []);
+  const maxSize = 500 * 1024 * 1024; // 500MB
+  if (file.size > maxSize) {
+    alert('❌ Файл слишком большой. Максимум: 500MB');
+    e.target.value = '';
+    return;
+  }
+
+  console.log('✅ Video file selected:', file.name);
+  setVideoFile(file);
+  setIsCameraOn(true);
+  setProcessingMode("upload");
+  setExerciseCount(0);
+}, []);
 
     const handleResults = useCallback((results: Results) => {
         const now = Date.now();
@@ -283,236 +291,235 @@ function App() {
                         isRecord: count > currentRecord
                     });
                 }
-            } catch (error) {
-                console.error("Ошибка сохранения результата:", error);
-                alert("Не удалось сохранить результат");
+            } finally {
+                console.log("lkdsm")
             }
         }
     }, [user, mode, userData]);
 
-    const exitAnalysisMode = useCallback(() => {
-        setIsCameraOn(false);
-        setVideoFile(null);
-        setPoseResults(null);
-    }, []);
+const exitAnalysisMode = useCallback(() => {
+    setIsCameraOn(false);
+    setVideoFile(null);
+    setPoseResults(null);
+}, []);
 
-    const handleProfileUpdate = useCallback((updatedData: UserData) => {
-        if (user) {
-            // Обновляем кеш
-            userDataCache.current.set(user.uid, updatedData);
-        }
-        setUserData(updatedData);
-    }, [user]);
-
-    // ✅ 7. Логика загрузки
-    if (isLoading) {
-        return (
-            <div className="app-container">
-                <div className="loading-spinner">Загрузка...</div>
-            </div>
-        );
+const handleProfileUpdate = useCallback((updatedData: UserData) => {
+    if (user) {
+        // Обновляем кеш
+        userDataCache.current.set(user.uid, updatedData);
     }
+    setUserData(updatedData);
+}, [user]);
 
-    // ✅ 8. Рендер JSX
+// ✅ 7. Логика загрузки
+if (isLoading) {
     return (
         <div className="app-container">
-            <header className="app-header">
-                <h1>Pull-Push AI</h1>
-                <nav className="main-nav">
-                    <Link to="/" className="nav-link">Тренировка</Link>
-                    <Link to="/leaderboard" className="nav-link">Таблица лидеров</Link>
-                    <Link to="/community" className="nav-link">Сообщество</Link>
-                    <Link to="/recordings" className="nav-link">Мои записи</Link>
-                </nav>
+            <div className="loading-spinner">Загрузка...</div>
+        </div>
+    );
+}
 
-                <div className="user-section">
-                    {user ? (
-                        <div className="user-profile">
-                            {/* ✅ Контейнер с аватаркой и инфо */}
+// ✅ 8. Рендер JSX
+return (
+    <div className="app-container">
+        <header className="app-header">
+            <h1>Pull-Push AI</h1>
+            <nav className="main-nav">
+                <Link to="/" className="nav-link">Тренировка</Link>
+                <Link to="/leaderboard" className="nav-link">Таблица лидеров</Link>
+                <Link to="/community" className="nav-link">Сообщество</Link>
+                <Link to="/recordings" className="nav-link">Мои записи</Link>
+            </nav>
+
+            <div className="user-section">
+                {user ? (
+                    <div className="user-profile">
+                        {/* ✅ Контейнер с аватаркой и инфо */}
+                        <div
+                            className="user-avatar-section"
+                            onClick={() => setShowProfileEditor(true)}
+                        >
                             <div
-                                className="user-avatar-section"
-                                onClick={() => setShowProfileEditor(true)}
+                                className="user-avatar"
+                                style={{ background: currentAvatarData.gradient }}
                             >
-                                <div
-                                    className="user-avatar"
-                                    style={{ background: currentAvatarData.gradient }}
-                                >
-                                    {currentAvatarData.imageUrl ? (
-                                        <img
-                                            src={currentAvatarData.imageUrl}
-                                            alt={currentAvatarData.name}
-                                            className="avatar-image"
-                                        />
-                                    ) : currentAvatarData.emoji ? (
-                                        <span className="avatar-emoji">{currentAvatarData.emoji}</span>
-                                    ) : (
-                                        <span className="avatar-fallback">
-                                            {userName.charAt(0).toUpperCase()}
-                                        </span>
-                                    )}
-                                </div>
-
-                                <div className="user-info">
-                                    <span className="user-name">{userName}</span>
-                                    <span className="edit-profile-link">Редактировать профиль</span>
-                                </div>
+                                {currentAvatarData.imageUrl ? (
+                                    <img
+                                        src={currentAvatarData.imageUrl}
+                                        alt={currentAvatarData.name}
+                                        className="avatar-image"
+                                    />
+                                ) : currentAvatarData.emoji ? (
+                                    <span className="avatar-emoji">{currentAvatarData.emoji}</span>
+                                ) : (
+                                    <span className="avatar-fallback">
+                                        {userName.charAt(0).toUpperCase()}
+                                    </span>
+                                )}
                             </div>
 
-                            {/* ✅ Кнопка выхода под аватаркой */}
-                            <button onClick={handleLogout} className="auth-button logout-button">
-                                Выйти
+                            <div className="user-info">
+                                <span className="user-name">{userName}</span>
+                                <span className="edit-profile-link">Редактировать профиль</span>
+                            </div>
+                        </div>
+
+                        {/* ✅ Кнопка выхода под аватаркой */}
+                        <button onClick={handleLogout} className="auth-button logout-button">
+                            Выйти
+                        </button>
+                    </div>
+                ) : (
+                    <div className="auth-buttons">
+                        <Link to="/login">
+                            <button className="auth-button">Войти</button>
+                        </Link>
+                        <Link to="/register">
+                            <button className="auth-button primary">Регистрация</button>
+                        </Link>
+                    </div>
+                )}
+            </div>
+        </header>
+
+        <main className="app-main">
+            <Routes>
+                <Route path="/" element={
+                    <div className="training-section">
+                        <div className="mode-selector">
+                            <button
+                                className={`mode-button ${mode === "pushup" ? "active" : ""}`}
+                                onClick={() => setMode("pushup")}
+                            >
+                                📊 Отжимания
+                            </button>
+                            <button
+                                className={`mode-button ${mode === "pullup" ? "active" : ""}`}
+                                onClick={() => setMode("pullup")}
+                            >
+                                💪 Подтягивания
                             </button>
                         </div>
-                    ) : (
-                        <div className="auth-buttons">
-                            <Link to="/login">
-                                <button className="auth-button">Войти</button>
-                            </Link>
-                            <Link to="/register">
-                                <button className="auth-button primary">Регистрация</button>
-                            </Link>
-                        </div>
-                    )}
-                </div>
-            </header>
 
-            <main className="app-main">
-                <Routes>
-                    <Route path="/" element={
-                        <div className="training-section">
-                            <div className="mode-selector">
-                                <button
-                                    className={`mode-button ${mode === "pushup" ? "active" : ""}`}
-                                    onClick={() => setMode("pushup")}
-                                >
-                                    📊 Отжимания
-                                </button>
-                                <button
-                                    className={`mode-button ${mode === "pullup" ? "active" : ""}`}
-                                    onClick={() => setMode("pullup")}
-                                >
-                                    💪 Подтягивания
-                                </button>
+                        {exerciseCount > 0 && (
+                            <div className="exercise-result">
+                                <h3>Результат: {exerciseCount} повторений</h3>
+                                {userData && (
+                                    <p>
+                                        Ваш рекорд в {mode === "pushup" ? "отжиманиях" : "подтягиваниях"}:{" "}
+                                        {userData[`${mode}Record`] || 0}
+                                    </p>
+                                )}
                             </div>
+                        )}
 
-                            {exerciseCount > 0 && (
-                                <div className="exercise-result">
-                                    <h3>Результат: {exerciseCount} повторений</h3>
-                                    {userData && (
-                                        <p>
-                                            Ваш рекорд в {mode === "pushup" ? "отжиманиях" : "подтягиваниях"}:{" "}
-                                            {userData[`${mode}Record`] || 0}
-                                        </p>
-                                    )}
+                        <div className="camera-container">
+                            {isCameraOn ? (
+                                <>
+                                    <div className="camera-view">
+                                        {processingMode === "live" ? (
+                                            <PoseCamera onResults={handleResults} />
+                                        ) : (
+                                            videoFile && <VideoFileProcessor videoFile={videoFile} onResults={handleResults} />
+                                        )}
+                                    </div>
+
+                                    <div className="tracker-container">
+                                        {mode === "pushup" && (
+                                            <PushUpTracker
+                                                results={poseResults}
+                                                onExerciseComplete={handleExerciseComplete}
+                                            />
+                                        )}
+                                        {mode === "pullup" && (
+                                            <PullUpTracker
+                                                results={poseResults}
+                                                onExerciseComplete={handleExerciseComplete}
+                                            />
+                                        )}
+                                    </div>
+
+                                    <button
+                                        onClick={exitAnalysisMode}
+                                        className="exit-analysis-button"
+                                    >
+                                        🚪 Выйти из режима анализа
+                                    </button>
+                                </>
+                            ) : (
+                                <div className="camera-placeholder">
+                                    <p>Включите камеру или загрузите видео для анализа</p>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="camera-controls">
+                            <TurnCamera
+                                isCameraOn={isCameraOn}
+                                toggleCamera={toggleIsCamera}
+                                handleVideoUpload={handleVideoUpload}
+                            />
+                        </div>
+
+                        <div className="recording-section">
+                            <VideoRecorder
+                                mode={mode}
+                                currentCount={exerciseCountRef.current}
+                                onRecordingComplete={handleRecordingComplete}
+                                onRecordingStatusChange={handleRecordingStatusChange}
+                            />
+
+                            {showSuccessMessage && (
+                                <div className="success-message">
+                                    <div className="success-content">
+                                        <span className="success-icon">✅</span>
+                                        <div>
+                                            <h3>Запись успешно сохранена!</h3>
+                                            <p>Перейдите во вкладку <Link to="/recordings">"Мои записи"</Link> чтобы посмотреть</p>
+                                        </div>
+                                        <button
+                                            onClick={() => setShowSuccessMessage(false)}
+                                            className="close-button"
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
                                 </div>
                             )}
 
-                            <div className="camera-container">
-                                {isCameraOn ? (
-                                    <>
-                                        <div className="camera-view">
-                                            {processingMode === "live" ? (
-                                                <PoseCamera onResults={handleResults} />
-                                            ) : (
-                                                videoFile && <VideoFileProcessor videoFile={videoFile} onResults={handleResults} />
-                                            )}
-                                        </div>
-
-                                        <div className="tracker-container">
-                                            {mode === "pushup" && (
-                                                <PushUpTracker
-                                                    results={poseResults}
-                                                    onExerciseComplete={handleExerciseComplete}
-                                                />
-                                            )}
-                                            {mode === "pullup" && (
-                                                <PullUpTracker
-                                                    results={poseResults}
-                                                    onExerciseComplete={handleExerciseComplete}
-                                                />
-                                            )}
-                                        </div>
-
-                                        <button
-                                            onClick={exitAnalysisMode}
-                                            className="exit-analysis-button"
-                                        >
-                                            🚪 Выйти из режима анализа
-                                        </button>
-                                    </>
-                                ) : (
-                                    <div className="camera-placeholder">
-                                        <p>Включите камеру или загрузите видео для анализа</p>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="camera-controls">
-                                <TurnCamera
-                                    isCameraOn={isCameraOn}
-                                    toggleCamera={toggleIsCamera}
-                                    handleVideoUpload={handleVideoUpload}
-                                />
-                            </div>
-
-                            <div className="recording-section">
-                                <VideoRecorder
-                                    mode={mode}
-                                    currentCount={exerciseCountRef.current}
-                                    onRecordingComplete={handleRecordingComplete}
-                                    onRecordingStatusChange={handleRecordingStatusChange}
-                                />
-
-                                {showSuccessMessage && (
-                                    <div className="success-message">
-                                        <div className="success-content">
-                                            <span className="success-icon">✅</span>
-                                            <div>
-                                                <h3>Запись успешно сохранена!</h3>
-                                                <p>Перейдите во вкладку <Link to="/recordings">"Мои записи"</Link> чтобы посмотреть</p>
-                                            </div>
-                                            <button
-                                                onClick={() => setShowSuccessMessage(false)}
-                                                className="close-button"
-                                            >
-                                                ×
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {currentRecording && (
-                                    <div className="recording-result">
-                                        <h3>🎉 Запись завершена!</h3>
-                                        <p>Результат: {currentRecording.count} повторений</p>
-                                        <video src={currentRecording.videoUrl} controls width="300" />
-                                        <button onClick={() => setCurrentRecording(null)}>
-                                            Закрыть
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
+                            {currentRecording && (
+                                <div className="recording-result">
+                                    <h3>🎉 Запись завершена!</h3>
+                                    <p>Результат: {currentRecording.count} повторений</p>
+                                    <video src={currentRecording.videoUrl} controls width="300" />
+                                    <button onClick={() => setCurrentRecording(null)}>
+                                        Закрыть
+                                    </button>
+                                </div>
+                            )}
                         </div>
-                    } />
+                    </div>
+                } />
 
-                    <Route path="/community" element={<Community userData={userData} user={user}/>} />
-                    <Route path="/leaderboard" element={<Leaderboard />} />
-                    <Route path="/recordings" element={<Recordings user={user} />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
-                </Routes>
-            </main>
+                <Route path="/community" element={<Community userData={userData} user={user} />} />
+                <Route path="/leaderboard" element={<Leaderboard />} />
+                <Route path="/recordings" element={<Recordings user={user} />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+            </Routes>
+        </main>
 
-            {showProfileEditor && user && (
-                <ProfileEditor
-                    user={user}
-                    userData={userData}
-                    onClose={() => setShowProfileEditor(false)}
-                    onUpdate={handleProfileUpdate}
-                />
-            )}
-        </div>
-    );
+        {showProfileEditor && user && (
+            <ProfileEditor
+                user={user}
+                userData={userData}
+                onClose={() => setShowProfileEditor(false)}
+                onUpdate={handleProfileUpdate}
+            />
+        )}
+    </div>
+);
 }
 
 export default App;

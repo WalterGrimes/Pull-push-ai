@@ -1,3 +1,5 @@
+// src/features/camera/PoseCamera.tsx
+
 import React, { useRef, useEffect, useCallback, memo } from "react";
 import { Pose, POSE_CONNECTIONS } from "@mediapipe/pose";
 import { Camera } from "@mediapipe/camera_utils";
@@ -14,8 +16,8 @@ const getPoseInstance = () => {
     });
 
     poseInstance.setOptions({
-      modelComplexity: 0, // Самая быстрая модель
-      smoothLandmarks: false, // Отключаем сглаживание
+      modelComplexity: 1,
+      smoothLandmarks: true,
       enableSegmentation: false,
       minDetectionConfidence: 0.5,
       minTrackingConfidence: 0.5
@@ -35,6 +37,13 @@ const PoseCamera: React.FC<PoseCameraProps> = memo(({ onResults }) => {
   const cameraRef = useRef<Camera | null>(null);
   const lastTimeRef = useRef<number>(0);
   const animationFrameRef = useRef<number>(0);
+  
+  // Стабильная ссылка на колбэк
+  const stableOnResults = useRef(onResults);
+  
+  useEffect(() => {
+    stableOnResults.current = onResults;
+  });
 
   // ✅ Мемоизированный обработчик с throttle
   const handleResults = useCallback((results: Results) => {
@@ -66,15 +75,15 @@ const PoseCamera: React.FC<PoseCameraProps> = memo(({ onResults }) => {
         lineWidth: 1,
         radius: 2
       });
+      
+      // ✅ ВАЖНО: Передаём результаты в родительский компонент
+      if (stableOnResults.current) {
+        stableOnResults.current(results);
+      }
     }
     
     ctx.restore();
-
-    // Передаём результаты в родительский компонент
-    if (onResults) {
-      onResults(results);
-    }
-  }, [onResults]);
+  }, []);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -105,8 +114,11 @@ const PoseCamera: React.FC<PoseCameraProps> = memo(({ onResults }) => {
     cameraRef.current = camera;
     camera.start();
 
+    console.log('✅ Camera started');
+
     // Cleanup
     return () => {
+      console.log('🛑 Stopping camera');
       camera?.stop();
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
